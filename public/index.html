@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitácora Nirvana</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --panel-bg: #ffffff;
+            --border-color: #d8dee6;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --accent-blue: #2563eb;
+            --accent-green: #059669;
+            --accent-purple: #7c3aed;
+            --accent-orange: #d97706;
+            --danger: #dc2626;
+            --header-bg: #eef2f7;
+            --hover-bg: #f3f4f6;
+            --section-header-bg: #e2e8f0;
+            /* Pasteles muy sutiles (solo filas de datos, no encabezados) */
+            --group-water: #f5f9fc;
+            --group-air: #f5faf7;
+            --group-tank1: #fbf8f4;
+            --group-tank2: #f8f6fb;
+            --group-tank3: #fbfaf4;
+            --group-pv: #f4f9fb;
+            --group-meter: #f7f8fa;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-weight: 600;
+            font-size: 1.5rem;
+            color: var(--accent-blue);
+        }
+
+        .device-sn {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .date-input {
+            background-color: var(--panel-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .refresh-btn {
+            background-color: var(--panel-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .refresh-btn:hover:not(:disabled) {
+            background-color: var(--hover-bg);
+            border-color: #9ca3af;
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--hover-bg);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-blue);
+            border-color: var(--border-color);
+            background: var(--panel-bg);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .stat-info h3 {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+
+        .stat-value.small {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .unit {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin: 0 0 1rem;
+            color: var(--text-primary);
+        }
+
+        .chart-section {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-section h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .state-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 280px;
+            color: var(--text-secondary);
+            text-align: center;
+            gap: 0.5rem;
+        }
+
+        .chart-container {
+            height: 360px;
+            width: 100%;
+            position: relative;
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .bitacora-report {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--panel-bg);
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+            overflow: hidden;
+        }
+
+        .bitacora-report-header {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            padding: 0.85rem 1.1rem;
+            border-bottom: 1px solid var(--border-color);
+            background: #f8fafc;
+            color: var(--text-primary);
+        }
+
+        .bitacora-report-logo {
+            height: 64px;
+            width: auto;
+            flex-shrink: 0;
+            display: block;
+            border-radius: 6px;
+        }
+
+        .bitacora-report-meta {
+            min-width: 0;
+        }
+
+        .bitacora-report-meta h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 0.35rem;
+            line-height: 1.25;
+            white-space: nowrap;
+        }
+
+        .bitacora-report-meta p {
+            margin: 0.1rem 0;
+            font-size: 0.78rem;
+            line-height: 1.35;
+            color: #4b5563;
+            white-space: nowrap;
+        }
+
+        .bitacora-report-meta p.location-line {
+            white-space: normal;
+            max-width: 34rem;
+        }
+
+        .bitacora-report-meta strong {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .bitacora-scroll {
+            width: 100%;
+            overflow-x: auto;
+            background: var(--panel-bg);
+        }
+
+        @media (max-width: 720px) {
+            .bitacora-report-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .bitacora-report-meta h2,
+            .bitacora-report-meta p {
+                white-space: normal;
+            }
+        }
+
+        .bitacora-table {
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            line-height: 1.25;
+            white-space: nowrap;
+            width: max-content;
+            min-width: 100%;
+        }
+
+        .bitacora-table th,
+        .bitacora-table td {
+            border: 1px solid var(--border-color);
+            padding: 0.2rem 0.45rem;
+            vertical-align: middle;
+        }
+
+        .bitacora-table thead th {
+            color: var(--text-secondary);
+            font-weight: 600;
+            background: var(--header-bg);
+            padding: 0.28rem 0.45rem;
+        }
+
+        .bitacora-table .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 3;
+            background: var(--header-bg);
+            width: max-content;
+            min-width: max-content;
+            max-width: none;
+            white-space: nowrap;
+            text-align: left;
+            color: var(--text-primary);
+            font-weight: 600;
+            padding-right: 0.75rem;
+        }
+
+        .bitacora-table tbody .sticky-col {
+            background: var(--panel-bg);
+            z-index: 2;
+        }
+
+        .bitacora-table .day-col {
+            min-width: 110px;
+            text-align: center;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Día central: velo azul ligero encima del color de grupo (no lo reemplaza) */
+        .bitacora-table tbody td.day-col.center-day {
+            background-image: linear-gradient(rgba(37, 99, 235, 0.06), rgba(37, 99, 235, 0.06));
+            font-weight: 600;
+        }
+
+        .bitacora-table thead .day-col.center-day {
+            color: var(--accent-blue);
+            background: var(--section-header-bg);
+        }
+
+        .bitacora-table tbody td.summary-col {
+            min-width: 140px;
+            text-align: center;
+            color: var(--text-primary);
+            background-image: linear-gradient(rgba(37, 99, 235, 0.05), rgba(37, 99, 235, 0.05));
+            font-variant-numeric: tabular-nums;
+        }
+
+        .bitacora-table thead .summary-col {
+            background: var(--section-header-bg);
+            color: var(--accent-blue);
+            white-space: normal;
+            min-width: 150px;
+        }
+
+        /* Encabezados de sección: gris propio, nunca el pastel de filas */
+        .bitacora-table .section-header th {
+            background: var(--section-header-bg);
+            color: #334155;
+            font-weight: 700;
+        }
+
+        .bitacora-table .section-header .sticky-col {
+            background: var(--section-header-bg);
+            color: #334155;
+        }
+
+        /* Grupos pastel solo en filas de datos */
+        .bitacora-table tbody tr.group-water td,
+        .bitacora-table tbody tr.group-water .sticky-col { background-color: var(--group-water); }
+        .bitacora-table tbody tr.group-air td,
+        .bitacora-table tbody tr.group-air .sticky-col { background-color: var(--group-air); }
+        .bitacora-table tbody tr.group-tank1 td,
+        .bitacora-table tbody tr.group-tank1 .sticky-col { background-color: var(--group-tank1); }
+        .bitacora-table tbody tr.group-tank2 td,
+        .bitacora-table tbody tr.group-tank2 .sticky-col { background-color: var(--group-tank2); }
+        .bitacora-table tbody tr.group-tank3 td,
+        .bitacora-table tbody tr.group-tank3 .sticky-col { background-color: var(--group-tank3); }
+        .bitacora-table tbody tr.group-pv td,
+        .bitacora-table tbody tr.group-pv .sticky-col { background-color: var(--group-pv); }
+        .bitacora-table tbody tr.group-meter td,
+        .bitacora-table tbody tr.group-meter .sticky-col { background-color: var(--group-meter); }
+
+        .bitacora-note {
+            margin-top: 0.85rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .enerclo-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--panel-bg);
+        }
+
+        .enerclo-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .enerclo-table th,
+        .enerclo-table td {
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.55rem 0.6rem;
+            text-align: center;
+            min-width: 72px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .enerclo-table th:first-child,
+        .enerclo-table td:first-child {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background: var(--panel-bg);
+            font-weight: 600;
+            min-width: 160px;
+            max-width: 220px;
+            white-space: normal;
+        }
+
+        .enerclo-table thead th {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            background: var(--header-bg);
+        }
+
+        .enerclo-table thead th:first-child {
+            background: var(--header-bg);
+            z-index: 1;
+        }
+
+        .enerclo-table tbody tr:hover td {
+            background: #eef6ff;
+        }
+
+        .enerclo-table tbody tr:hover td:first-child {
+            background: #e8f1ff;
+        }
+
+        .enerclo-table .empty-cell {
+            color: var(--text-secondary);
+        }
+    </style>
+
+    <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+    <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+    <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+        const {
+            LineChart,
+            Line,
+            XAxis,
+            YAxis,
+            CartesianGrid,
+            Tooltip,
+            Legend,
+            ResponsiveContainer
+        } = window.Recharts;
+
+        const tooltipStyle = {
+            backgroundColor: '#ffffff',
+            borderColor: '#d8dee6',
+            borderRadius: '8px',
+            color: '#1f2937'
+        };
+
+        function todayLocal() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function yesterdayLocal() {
+            const d = new Date();
+            d.setDate(d.getDate() - 1);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function round1(n) {
+            return Math.round((Number(n) || 0) * 10) / 10;
+        }
+
+        function formatValue(value, unit = '') {
+            if (value == null || value === '') return '—';
+            if (typeof value === 'string' && Number.isNaN(Number(value))) return value;
+            const num = Number(value);
+            if (Number.isNaN(num)) return String(value);
+            const text = Number.isInteger(num) ? String(num) : String(round1(num));
+            return unit ? `${text} ${unit}` : text;
+        }
+
+        const ENERCLO_METRICS = [
+            { key: 'epv', label: 'PV (kWh)' },
+            { key: 'eload', label: 'Consumo (kWh)' },
+            { key: 'echarge', label: 'Carga bat. (kWh)' },
+            { key: 'edischarge', label: 'Descarga bat. (kWh)' },
+            { key: 'egrid', label: 'Desde red (kWh)' },
+            { key: 'etoGrid', label: 'A red (kWh)' },
+            { key: 'dgIntakePower', label: 'DG (kWh)' },
+            { key: 'nonCriticalLoad', label: 'Carga no crítica' },
+            { key: 'powerGridInverter', label: 'Inversor red' }
+        ];
+
+        function mapStatsPayload(raw) {
+            const rows = Array.isArray(raw) ? raw : [];
+            const withPv = rows.filter((r) => r.epv != null);
+            const todayKey = todayLocal();
+            const today =
+                rows.find((r) => r.statisticsDate === todayKey && r.epv != null) ||
+                withPv[withPv.length - 1] ||
+                null;
+
+            const dayColumns = [...rows]
+                .sort((a, b) => String(a.statisticsDate).localeCompare(String(b.statisticsDate)))
+                .map((r) => ({
+                    date: r.statisticsDate,
+                    deviceSn: r.deviceSn,
+                    epv: r.epv,
+                    eload: r.eload,
+                    echarge: r.echarge,
+                    edischarge: r.edischarge,
+                    egrid: r.egrid,
+                    etoGrid: r.etoGrid,
+                    dgIntakePower: r.dgIntakePower,
+                    nonCriticalLoad: r.nonCriticalLoad,
+                    powerGridInverter: r.powerGridInverter
+                }));
+
+            return {
+                deviceSn: today?.deviceSn || rows[0]?.deviceSn || '—',
+                dayPower: round1(today?.epv),
+                dayLoad: round1(today?.eload),
+                monthPower: round1(withPv.reduce((sum, r) => sum + (Number(r.epv) || 0), 0)),
+                dayColumns
+            };
+        }
+
+        function formatEnercloCell(value) {
+            if (value == null || value === '') return '';
+            const num = Number(value);
+            if (Number.isNaN(num)) return String(value);
+            return Number.isInteger(num) ? String(num) : String(round1(num));
+        }
+
+        function formatEnercloDateHeader(dateStr) {
+            const [y, m, d] = String(dateStr).split('-');
+            if (!y || !m || !d) return dateStr;
+            return `${d}/${m}`;
+        }
+
+        function downsample(rows, maxPoints = 180) {
+            if (!Array.isArray(rows) || rows.length <= maxPoints) return rows || [];
+            const step = Math.ceil(rows.length / maxPoints);
+            const sampled = [];
+            for (let i = 0; i < rows.length; i += step) sampled.push(rows[i]);
+            const last = rows[rows.length - 1];
+            if (sampled[sampled.length - 1] !== last) sampled.push(last);
+            return sampled;
+        }
+
+        function StatCard({ title, value, unit, color, small }) {
+            return (
+                <div className="stat-card" style={{ borderLeft: `4px solid ${color}` }}>
+                    <div className="stat-info">
+                        <h3>{title}</h3>
+                        <p className={`stat-value${small ? ' small' : ''}`}>
+                            {value}{unit ? <span className="unit"> {unit}</span> : null}
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        function EnercloTab() {
+            const [stats, setStats] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState('');
+
+            const fetchStats = async () => {
+                setLoading(true);
+                setError('');
+                try {
+                    const response = await fetch('/api/stats');
+                    if (!response.ok) throw new Error('Error al obtener los datos de EnerClo');
+                    const json = await response.json();
+                    if (json.code !== 200) throw new Error(json.msg || 'Error desconocido');
+                    setStats(mapStatsPayload(json.data));
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => { fetchStats(); }, []);
+
+            const dayColumns = useMemo(() => stats?.dayColumns || [], [stats]);
+
+            return (
+                <div>
+                    <div className="header" style={{ borderBottom: 'none', marginBottom: '1rem', paddingBottom: 0 }}>
+                        <div>
+                            {stats && <p className="device-sn">Dispositivo: {stats.deviceSn}</p>}
+                        </div>
+                        <button className="refresh-btn" onClick={fetchStats} disabled={loading}>
+                            {loading ? 'Cargando...' : 'Actualizar'}
+                        </button>
+                    </div>
+
+                    {loading && (
+                        <div className="state-container">
+                            <p>Cargando datos de energía de tus inversores...</p>
+                        </div>
+                    )}
+
+                    {error && !loading && (
+                        <div className="state-container" style={{ color: 'var(--danger)' }}>
+                            <h2>Error</h2>
+                            <p>{error}</p>
+                        </div>
+                    )}
+
+                    {!loading && !error && stats && (
+                        <React.Fragment>
+                            <div className="stats-grid">
+                                <StatCard title="Generación Hoy (PV)" value={stats.dayPower} unit="kWh" color="var(--accent-blue)" />
+                                <StatCard title="Consumo Hoy" value={stats.dayLoad} unit="kWh" color="var(--accent-green)" />
+                                <StatCard title="Generación Mes (PV)" value={stats.monthPower} unit="kWh" color="var(--accent-purple)" />
+                            </div>
+
+                            <h3 className="section-title">Rendimiento diario del mes</h3>
+                            <div className="enerclo-table-wrap">
+                                {dayColumns.length === 0 ? (
+                                    <div className="state-container">
+                                        <p>Sin datos de generación para este mes.</p>
+                                    </div>
+                                ) : (
+                                    <table className="enerclo-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Indicador</th>
+                                                {dayColumns.map((day) => (
+                                                    <th key={day.date}>{formatEnercloDateHeader(day.date)}</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {ENERCLO_METRICS.map((metric) => (
+                                                <tr key={metric.key}>
+                                                    <td>{metric.label}</td>
+                                                    {dayColumns.map((day) => (
+                                                        <td
+                                                            key={`${metric.key}_${day.date}`}
+                                                            className={day[metric.key] == null ? 'empty-cell' : ''}
+                                                        >
+                                                            {formatEnercloCell(day[metric.key])}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </React.Fragment>
+                    )}
+                </div>
+            );
+        }
+
+        function ChillerTab() {
+            const [date, setDate] = useState(todayLocal());
+            const [summary, setSummary] = useState(null);
+            const [ionRows, setIonRows] = useState([]);
+            const [ionTotal, setIonTotal] = useState(0);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState('');
+
+            const fetchChillerSummary = async (selectedDate) => {
+                const response = await fetch(`/api/chiller/summary-bitacora?date=${selectedDate}`);
+                if (!response.ok) throw new Error('Error al consultar summary-bitacora');
+                const json = await response.json();
+                if (!json.success) throw new Error(json.error || 'Summary sin éxito');
+                return json;
+            };
+
+            const fetchChillerIonMinutos = async (selectedDate) => {
+                const response = await fetch(`/api/chiller/data/ion_meter_minutos?date=${selectedDate}`);
+                if (!response.ok) throw new Error('Error al consultar medidor ION');
+                const json = await response.json();
+                if (!json.success) throw new Error(json.error || 'ION sin éxito');
+                return json;
+            };
+
+            const fetchChiller = async (selectedDate = date) => {
+                setLoading(true);
+                setError('');
+                try {
+                    const [summaryJson, ionJson] = await Promise.all([
+                        fetchChillerSummary(selectedDate),
+                        fetchChillerIonMinutos(selectedDate)
+                    ]);
+
+                    const rows = Array.isArray(ionJson.data) ? [...ionJson.data].reverse() : [];
+                    setSummary(summaryJson.data || null);
+                    setIonRows(rows);
+                    setIonTotal(ionJson.total || rows.length);
+                } catch (err) {
+                    setError(err.message);
+                    setSummary(null);
+                    setIonRows([]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => { fetchChiller(date); }, []);
+
+            const first = ionRows.length ? ionRows[0] : null;
+            const latest = ionRows.length ? ionRows[ionRows.length - 1] : null;
+
+            const chartData = useMemo(() => {
+                return downsample(ionRows, 180).map((r) => ({
+                    time: String(r.fecha_hora || '').slice(11, 16),
+                    fullTime: r.fecha_hora,
+                    ia: Number(r.ia) || 0,
+                    ib: Number(r.ib) || 0,
+                    vln_avg: Number(r.vln_avg) || 0,
+                    pf: Number(r.pf) || 0
+                }));
+            }, [ionRows]);
+
+            return (
+                <div>
+                    <div className="header" style={{ borderBottom: 'none', marginBottom: '1rem', paddingBottom: 0 }}>
+                        <div>
+                            <p className="device-sn">Bitácora chiller · Medidor ION</p>
+                        </div>
+                        <div className="header-actions">
+                            <input
+                                className="date-input"
+                                type="date"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                            />
+                            <button
+                                className="refresh-btn"
+                                onClick={() => fetchChiller(date)}
+                                disabled={loading}
+                            >
+                                {loading ? 'Cargando...' : 'Actualizar'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {loading && (
+                        <div className="state-container">
+                            <p>Consultando endpoints de chiller...</p>
+                        </div>
+                    )}
+
+                    {error && !loading && (
+                        <div className="state-container" style={{ color: 'var(--danger)' }}>
+                            <h2>Error</h2>
+                            <p>{error}</p>
+                        </div>
+                    )}
+
+                    {!loading && !error && summary && (
+                        <React.Fragment>
+                            <h3 className="section-title">Resumen bitácora ({summary.date || date})</h3>
+                            <div className="stats-grid">
+                                <StatCard title="Horómetro water chiller" value={formatValue(summary.hourmeter_water_chiller)} unit="h" color="var(--accent-blue)" />
+                                <StatCard title="Horómetro air chiller" value={formatValue(summary.hourmeter_air_chiller)} unit="h" color="var(--accent-green)" />
+                                <StatCard title="Ciclos water / air" value={`${formatValue(summary.cycles_water_chiller)} / ${formatValue(summary.cycles_air_chiller)}`} color="var(--accent-purple)" />
+                                <StatCard title="Main meter kWh" value={formatValue(summary.main_meter_kwh)} unit="kWh" color="var(--accent-orange)" />
+                                <StatCard title="Temp tanque frío (top)" value={formatValue(summary.temp_central_chilled_water_tank_top)} unit="°C" color="var(--accent-blue)" />
+                                <StatCard title="Temp tanque frío (bottom)" value={formatValue(summary.temp_central_chilled_water_tank_bottom)} unit="°C" color="var(--accent-orange)" />
+                                <StatCard title="Nivel tanque 1 / 2 / 3" value={`${formatValue(summary.water_level_tank1)} / ${formatValue(summary.water_level_tank2)} / ${formatValue(summary.water_level_tank3)}`} color="var(--accent-green)" small />
+                                <StatCard title="Temp tanque 1 / 2 / 3" value={`${formatValue(summary.temp_tank1)} / ${formatValue(summary.temp_tank2)} / ${formatValue(summary.temp_tank3)} °C`} color="var(--accent-purple)" small />
+                                <StatCard title="Nivel agua ciudad" value={formatValue(summary.water_level_city_water_tank)} color="var(--text-secondary)" small />
+                                <StatCard title="Temp agua ciudad" value={formatValue(summary.temp_city_water_tank)} color="var(--text-secondary)" small />
+                            </div>
+
+                            <h3 className="section-title">Medidor ION</h3>
+                            <div className="meta-row">
+                                <span>Puntos del día: {ionRows.length}{ionTotal ? ` (total API: ${ionTotal})` : ''}</span>
+                                <span>Última lectura: {latest?.fecha_hora || '—'}</span>
+                                <span>Meter: {latest?.meter_id || '—'}</span>
+                            </div>
+
+                            {latest && first && (
+                                <div className="stats-grid">
+                                    <StatCard title="KWH IMP inicial" value={formatValue(first.kwh_imp)} unit="kWh" color="var(--accent-blue)" />
+                                    <StatCard title="KWH IMP final" value={formatValue(latest.kwh_imp)} unit="kWh" color="var(--accent-blue)" />
+                                    <StatCard title="KWH EXP inicial" value={formatValue(first.kwh_exp)} unit="kWh" color="var(--accent-green)" />
+                                    <StatCard title="KWH EXP final" value={formatValue(latest.kwh_exp)} unit="kWh" color="var(--accent-green)" />
+                                    <StatCard title="Vln avg" value={formatValue(latest.vln_avg)} unit="V" color="var(--accent-purple)" />
+                                    <StatCard title="Vll AB" value={formatValue(latest.vll_ab)} unit="V" color="var(--accent-purple)" />
+                                    <StatCard title="Ia / Ib" value={`${formatValue(latest.ia)} / ${formatValue(latest.ib)}`} unit="A" color="var(--accent-orange)" />
+                                    <StatCard title="Factor de potencia" value={formatValue(latest.pf)} color="var(--accent-orange)" />
+                                    <StatCard title="Frecuencia" value={formatValue(latest.freq)} unit="Hz" color="var(--accent-blue)" />
+                                    <StatCard title="kWh tot / net" value={`${formatValue(latest.kwh_tot)} / ${formatValue(latest.kwh_net)}`} color="var(--accent-purple)" small />
+                                </div>
+                            )}
+
+                            <div className="chart-section">
+                                <h2>Corriente y voltaje (minutos)</h2>
+                                <div className="chart-container">
+                                    {chartData.length === 0 ? (
+                                        <div className="state-container" style={{ height: '100%' }}>
+                                            <p>Sin lecturas ION para esta fecha.</p>
+                                        </div>
+                                    ) : (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={chartData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                                <XAxis dataKey="time" stroke="#8b949e" tick={{ fill: '#8b949e', fontSize: 11 }} minTickGap={40} />
+                                                <YAxis yAxisId="left" stroke="#8b949e" tick={{ fill: '#8b949e' }} />
+                                                <YAxis yAxisId="right" orientation="right" stroke="#8b949e" tick={{ fill: '#8b949e' }} />
+                                                <Tooltip
+                                                    contentStyle={tooltipStyle}
+                                                    labelStyle={{ color: '#c9d1d9' }}
+                                                    labelFormatter={(_, payload) => payload?.[0]?.payload?.fullTime || _}
+                                                />
+                                                <Legend />
+                                                <Line yAxisId="left" type="monotone" dataKey="ia" name="Ia (A)" stroke="#58a6ff" strokeWidth={2} dot={false} />
+                                                <Line yAxisId="left" type="monotone" dataKey="ib" name="Ib (A)" stroke="#3fb950" strokeWidth={2} dot={false} />
+                                                <Line yAxisId="right" type="monotone" dataKey="vln_avg" name="Vln avg (V)" stroke="#bc8cff" strokeWidth={2} dot={false} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    )}
+                                </div>
+                            </div>
+                        </React.Fragment>
+                    )}
+                </div>
+            );
+        }
+
+        const BITACORA_START = '2025-05-08';
+
+        const MAIN_METER_BASE = 9999 + 9999 + 9999 + 9999;
+
+        const BITACORA_INDICATORS = [
+            { key: 'main_meter_ion7300', label: 'Main Meter ION7300 kWh – Copenergy SA', group: 'meter' },
+            { key: 'kwh_consumed_from_grid', label: 'kWh Consumed from Grid', group: 'meter' },
+            { key: 'kwh_generated_by_pv_total', label: 'kWh Generated by PV (Total)', group: 'pv' },
+            { key: 'kwh_export_to_grid_daily', label: 'kWh export to grid (dayli)', group: 'meter' },
+            { key: 'kwh_export_to_grid_accumulated', label: 'Kwh export to grid (accumulated)', group: 'meter' },
+            { key: 'kwh_consumed_by_nirvana', label: 'kWh Consumed by NIRVANA' },
+            { key: 'weather_forecast', label: 'Weather Forecast' }
+        ];
+
+        // Resúmenes coincidentes en GENERAL DATA y CHILLER SYSTEM (misma fecha + mismo texto).
+        const SHARED_SUMMARY_AFTER = {
+            '2025-10-22': { key: 'sum_22sep_22oct', label: 'Del 22 Septiembre al 22 de Octubre' },
+            '2025-12-22': { key: 'sum_22nov_22dic', label: 'Del 22 Noviembre al 22 de Diciembre' }
+        };
+
+        // Solo en GENERAL DATA (sin par en CHILLER SYSTEM).
+        const GENERAL_DATA_ONLY_SUMMARY_AFTER = {
+            '2025-07-21': { key: 'sum_20jun_21jul', label: 'Total 20 de junio - 21 de julio' },
+            '2025-08-22': { key: 'sum_22jul_22ago', label: 'Del 22 Julio al 22 de Agost.' },
+            '2025-09-22': { key: 'sum_22ago_22sep', label: 'Del 22 de Agost. - 22 Sept.' }
+        };
+
+        // Solo en CHILLER SYSTEM (sin par en GENERAL DATA).
+        const CHILLER_SYSTEM_ONLY_SUMMARY_AFTER = {
+            '2026-03-20': { key: 'sum_22feb_20mar', label: 'Del 22 Feb al 20 de Marz' },
+            '2026-04-22': { key: 'sum_21mar_22abr', label: 'Del 21 Marzo al 22 de Abril' },
+            '2026-05-23': { key: 'sum_23abr_23may', label: 'Del 23 Abril al 23 de Mayo' },
+            '2026-06-23': { key: 'sum_23may_23jun', label: 'Del 23 Mayo al 23 de Junio' }
+        };
+
+        // Una sola grilla de columnas para GENERAL DATA + CHILLER SYSTEM
+        const UNIFIED_SUMMARY_AFTER = {
+            ...GENERAL_DATA_ONLY_SUMMARY_AFTER,
+            ...SHARED_SUMMARY_AFTER,
+            ...CHILLER_SYSTEM_ONLY_SUMMARY_AFTER
+        };
+
+        const CHILLER_SYSTEM_INDICATORS = [
+            { key: 'daily_hours_water_chiller', label: 'Daily hours of work – Water Chiller', group: 'water' },
+            { key: 'cycles_water_chiller', label: 'Cycles Water Chiller', group: 'water' },
+            { key: 'kwh_water_chiller_compressor', label: 'kWh consumed from water chiller compressor', group: 'water' },
+            { key: 'daily_hours_air_chiller', label: 'Daily hours of work – Air Chiller', group: 'air' },
+            { key: 'cycles_air_chiller', label: 'Cycles Air Chiller', group: 'air' },
+            { key: 'kwh_air_chiller_compressor', label: 'kWh consumed from air chiller compressor', group: 'air' },
+            { key: 'kwh_circulating_pump', label: 'kWh consumed from circulating pump' },
+            { key: 'temp_central_chw_returned', label: 'Temp °C – Central Chilled Water returned' },
+            { key: 'water_level_tank1', label: 'Water Level / Overflow Height – Tank 1 (2.60 m)', group: 'tank1' },
+            { key: 'temp_tank1', label: 'Temp °C – Tank 1', group: 'tank1' },
+            { key: 'water_level_tank2', label: 'Water Level / Overflow Height – Tank 2 (2.82 m)', group: 'tank2' },
+            { key: 'temp_tank2', label: 'Temp °C – Tank 2', group: 'tank2' },
+            { key: 'water_level_tank3', label: 'Water Level / Overflow Height – Tank 3 (2.73 m)', group: 'tank3' },
+            { key: 'temp_tank3', label: 'Temp °C – Tank 3', group: 'tank3' }
+        ];
+
+        const PV_CAPACITY_KW = 37.8;
+
+        const PV_SYSTEM_INDICATORS = [
+            { key: 'plant_factor_pv', label: 'Plant Factor (37.8 kW of PV)', group: 'pv' },
+            { key: 'kwh_generated_by_pv', label: 'kWh Generated by PV', group: 'pv' },
+            { key: 'inverter_losses', label: 'Inverter Losses', group: 'pv' },
+            { key: 'kwh_battery_charge_from_pv', label: 'kWh Battery Charge from PV', group: 'pv' },
+            { key: 'kwh_consumed_from_pv', label: 'kWh Consumed from PV', group: 'pv' },
+            { key: 'kwh_consumed_from_battery', label: 'kWh Consumed from Battery' },
+            { key: 'kwh_consumed_from_enee', label: 'kWh Consumed from ENEE' },
+            { key: 'total_kwh_consumed', label: 'Total kWh Consumed' }
+        ];
+
+        function parseYmd(ymd) {
+            const [y, m, d] = ymd.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        function toYmd(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function toDmy(date) {
+            return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+        }
+
+        function weekdayName(date) {
+            return date.toLocaleDateString('en-US', { weekday: 'long' });
+        }
+
+        function monthKeyFromDate(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function shiftMonthKey(monthKey, delta) {
+            const [y, m] = monthKey.split('-').map(Number);
+            const d = new Date(y, m - 1 + delta, 1);
+            return monthKeyFromDate(d);
+        }
+
+        // Ventana de 3 días: ayer | fecha seleccionada | mañana
+        function buildBitacoraColumnsForCenter(centerYmd) {
+            const center = parseYmd(centerYmd);
+            return [-1, 0, 1].map((delta) => {
+                const date = new Date(center);
+                date.setDate(date.getDate() + delta);
+                const ymd = toYmd(date);
+                return {
+                    type: 'day',
+                    key: `day_${ymd}`,
+                    weekday: weekdayName(date),
+                    dateLabel: toDmy(date),
+                    ymd,
+                    isCenter: delta === 0
+                };
+            });
+        }
+
+        function dayColClass(col) {
+            if (col.type === 'summary') return 'summary-col';
+            return col.isCenter ? 'day-col center-day' : 'day-col';
+        }
+
+        function BitacoraSectionHeader({ title, columns }) {
+            return (
+                <React.Fragment>
+                    <tr className="section-header">
+                        <th className="sticky-col" rowSpan={2}>{title}</th>
+                        {columns.map((col) => (
+                            <th
+                                key={`wd_${title}_${col.key}`}
+                                className={dayColClass(col)}
+                            >
+                                {col.weekday}
+                            </th>
+                        ))}
+                    </tr>
+                    <tr className="section-header">
+                        {columns.map((col) => (
+                            <th
+                                key={`dt_${title}_${col.key}`}
+                                className={dayColClass(col)}
+                            >
+                                {col.dateLabel}
+                            </th>
+                        ))}
+                    </tr>
+                </React.Fragment>
+            );
+        }
+
+        function BitacoraIndicatorRows({ indicators, columns, cellValue }) {
+            return indicators.map((indicator) => (
+                <tr key={indicator.key} className={indicator.group ? `group-${indicator.group}` : ''}>
+                    <td className="sticky-col">{indicator.label}</td>
+                    {columns.map((col) => (
+                        <td
+                            key={`${indicator.key}_${col.key}`}
+                            className={dayColClass(col)}
+                        >
+                            {cellValue(indicator.key, col.key)}
+                        </td>
+                    ))}
+                </tr>
+            ));
+        }
+
+        function BitacoraReportHeader() {
+            return (
+                <div className="bitacora-report-header">
+                    <img
+                        className="bitacora-report-logo"
+                        src="/assets/copenergy-logo.png"
+                        alt="copenergy"
+                    />
+                    <div className="bitacora-report-meta">
+                        <h2>Energy Production and Consumption Log</h2>
+                        <p><strong>Project:</strong> Nirvana Building</p>
+                        <p className="location-line">
+                            <strong>Location:</strong> Lomas del Guijarro Sur, C. Bonn,<br />
+                            Tegucigalpa, Francisco Morazán
+                        </p>
+                        <p><strong>Client:</strong> Waleska Ruiz</p>
+                    </div>
+                </div>
+            );
+        }
+
+        function BitacoraUnifiedTable({
+            tableRef,
+            columns,
+            generalIndicators,
+            chillerIndicators,
+            pvIndicators,
+            cellValue
+        }) {
+            return (
+                <div className="bitacora-report" ref={tableRef}>
+                    <BitacoraReportHeader />
+                    <div className="bitacora-scroll">
+                        <table className="bitacora-table">
+                            <thead>
+                                <tr>
+                                    <th className="sticky-col" rowSpan={2}>GENERAL DATA</th>
+                                    {columns.map((col) => (
+                                        <th
+                                            key={`wd_general_${col.key}`}
+                                            className={dayColClass(col)}
+                                        >
+                                            {col.weekday}
+                                        </th>
+                                    ))}
+                                </tr>
+                                <tr>
+                                    {columns.map((col) => (
+                                        <th
+                                            key={`dt_general_${col.key}`}
+                                            className={dayColClass(col)}
+                                        >
+                                            {col.dateLabel}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <BitacoraIndicatorRows
+                                    indicators={generalIndicators}
+                                    columns={columns}
+                                    cellValue={cellValue}
+                                />
+                                <BitacoraSectionHeader title="CHILLER SYSTEM" columns={columns} />
+                                <BitacoraIndicatorRows
+                                    indicators={chillerIndicators}
+                                    columns={columns}
+                                    cellValue={cellValue}
+                                />
+                                <BitacoraSectionHeader title="PV SYSTEM" columns={columns} />
+                                <BitacoraIndicatorRows
+                                    indicators={pvIndicators}
+                                    columns={columns}
+                                    cellValue={cellValue}
+                                />
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+
+        /** Captura encabezado + tabla dejando solo las 3 primeras columnas (etiqueta + 2 días). */
+        async function captureBitacoraTable(wrapEl, filename) {
+            if (!wrapEl || typeof window.html2canvas !== 'function') {
+                throw new Error('html2canvas no está disponible');
+            }
+            const table = wrapEl.querySelector('.bitacora-table');
+            if (!table) throw new Error('No se encontró la tabla');
+
+            const canvas = await window.html2canvas(wrapEl, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                useCORS: true,
+                onclone: (clonedDoc) => {
+                    const clonedWrap = clonedDoc.querySelector('.bitacora-report');
+                    const clonedTable = clonedDoc.querySelector('.bitacora-table');
+                    if (!clonedTable) return;
+                    clonedTable.querySelectorAll('tr').forEach((tr) => {
+                        const cells = tr.querySelectorAll(':scope > th, :scope > td');
+                        if (cells.length > 3) {
+                            for (let i = cells.length - 1; i >= 3; i -= 1) {
+                                cells[i].remove();
+                            }
+                        } else if (cells.length > 0 && !tr.querySelector('.sticky-col')) {
+                            for (let i = cells.length - 1; i >= 2; i -= 1) {
+                                cells[i].remove();
+                            }
+                        }
+                    });
+
+                    clonedTable.querySelectorAll('.sticky-col').forEach((el) => {
+                        el.style.position = 'static';
+                        el.style.left = 'auto';
+                    });
+
+                    // Ancho natural de la tabla (3 cols); encabezado se adapta a ese ancho
+                    clonedTable.style.width = 'max-content';
+                    clonedTable.style.minWidth = '0';
+                    clonedTable.style.tableLayout = 'auto';
+
+                    const scroll = clonedTable.closest('.bitacora-scroll');
+                    if (scroll) {
+                        scroll.style.overflow = 'visible';
+                        scroll.style.width = 'max-content';
+                        scroll.style.maxWidth = 'none';
+                    }
+
+                    if (clonedWrap) {
+                        const header = clonedWrap.querySelector('.bitacora-report-header');
+                        clonedWrap.style.display = 'inline-block';
+                        clonedWrap.style.width = 'max-content';
+                        clonedWrap.style.maxWidth = 'none';
+                        clonedWrap.style.overflow = 'visible';
+                        if (header) {
+                            header.style.width = '100%';
+                            header.style.boxSizing = 'border-box';
+                            header.style.alignItems = 'flex-start';
+                            const loc = header.querySelector('.location-line');
+                            if (loc) loc.style.maxWidth = '100%';
+                        }
+                        // Fijar ancho al de la tabla para que encabezado y tabla coincidan
+                        const tableWidth = clonedTable.scrollWidth || clonedTable.offsetWidth;
+                        if (tableWidth > 0) {
+                            clonedWrap.style.width = `${tableWidth}px`;
+                            clonedTable.style.width = '100%';
+                            if (scroll) scroll.style.width = '100%';
+                        }
+                    }
+                }
+            });
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function numOrNull(value) {
+            if (value == null || value === '') return null;
+            const n = Number(value);
+            return Number.isFinite(n) ? n : null;
+        }
+
+        function formatBitacoraNumber(value) {
+            if (value == null || value === '') return '';
+            if (typeof value === 'string') return value;
+            const num = Number(value);
+            if (!Number.isFinite(num)) return String(value);
+            return num.toFixed(2);
+        }
+
+        function shiftYmd(ymd, deltaDays) {
+            const d = parseYmd(ymd);
+            d.setDate(d.getDate() + deltaDays);
+            return toYmd(d);
+        }
+
+        function mainMeterFromImpInicial(kwhImpInicial) {
+            const imp = numOrNull(kwhImpInicial);
+            if (imp == null) return null;
+            return MAIN_METER_BASE + imp;
+        }
+
+        function buildBitacoraValues(columns, ionDays, enercloByDate = {}, weatherByDate = {}) {
+            const values = {
+                main_meter_ion7300: {},
+                kwh_consumed_from_grid: {},
+                kwh_generated_by_pv_total: {},
+                kwh_export_to_grid_daily: {},
+                kwh_export_to_grid_accumulated: {},
+                kwh_consumed_by_nirvana: {},
+                weather_forecast: {}
+            };
+
+            const dayCols = columns.filter((c) => c.type === 'day');
+
+            for (const col of dayCols) {
+                const ymd = col.ymd;
+                const day = ionDays[ymd];
+                const next = ionDays[shiftYmd(ymd, 1)];
+                const prev = ionDays[shiftYmd(ymd, -1)];
+                const enerclo = enercloByDate[ymd];
+
+                const mainToday = day && !day.empty ? mainMeterFromImpInicial(day.kwh_imp_inicial) : null;
+                const mainTomorrow = next && !next.empty ? mainMeterFromImpInicial(next.kwh_imp_inicial) : null;
+
+                values.main_meter_ion7300[col.key] = mainToday;
+
+                let consumedFromGrid = null;
+                if (mainToday != null && mainTomorrow != null) {
+                    consumedFromGrid = mainTomorrow - mainToday;
+                    values.kwh_consumed_from_grid[col.key] = consumedFromGrid;
+                } else {
+                    values.kwh_consumed_from_grid[col.key] = '';
+                }
+
+                // GENERAL DATA.kWh Generated by PV (Total) = PV SYSTEM.kWh Generated by PV (epv)
+                const pvGenerated = numOrNull(enerclo?.epv);
+                values.kwh_generated_by_pv_total[col.key] = pvGenerated == null ? '' : pvGenerated;
+
+                const weather = weatherByDate[ymd];
+                values.weather_forecast[col.key] = weather?.label || '';
+
+                const expToday = day && !day.empty ? numOrNull(day.kwh_exp_final) : null;
+                const expYesterday = prev && !prev.empty
+                    ? numOrNull(prev.kwh_exp_final)
+                    : (day && !day.empty ? numOrNull(day.kwh_exp_inicial) : null);
+
+                let exportDaily = null;
+                if (expToday != null && expYesterday != null) {
+                    exportDaily = expToday - expYesterday;
+                    values.kwh_export_to_grid_daily[col.key] = exportDaily;
+                } else {
+                    values.kwh_export_to_grid_daily[col.key] = '';
+                }
+
+                values.kwh_export_to_grid_accumulated[col.key] = expToday != null ? expToday : '';
+
+                // Consumed by NIRVANA =
+                // (Grid + PV Generated - Export daily) - ABS(Battery Charge from PV - Consumed from Battery)
+                const batteryChargeFromPv = numOrNull(enerclo?.echarge);
+                const consumedFromBattery = numOrNull(enerclo?.edischarge);
+
+                if (
+                    consumedFromGrid != null &&
+                    pvGenerated != null &&
+                    exportDaily != null &&
+                    batteryChargeFromPv != null &&
+                    consumedFromBattery != null
+                ) {
+                    values.kwh_consumed_by_nirvana[col.key] =
+                        (consumedFromGrid + pvGenerated - exportDaily) -
+                        Math.abs(batteryChargeFromPv - consumedFromBattery);
+                } else {
+                    values.kwh_consumed_by_nirvana[col.key] = '';
+                }
+            }
+
+            return values;
+        }
+
+        function summaryField(day, field) {
+            if (!day || day.empty || !day.data) return '';
+            const value = day.data[field];
+            if (value == null || value === '') return '';
+            return value;
+        }
+
+        function buildChillerSystemValues(columns, summaryDays, consumoDays = {}) {
+            const values = {};
+            for (const indicator of CHILLER_SYSTEM_INDICATORS) {
+                values[indicator.key] = {};
+            }
+
+            const dayCols = columns.filter((c) => c.type === 'day');
+            for (const col of dayCols) {
+                const day = summaryDays[col.ymd];
+                const consumo = consumoDays[col.ymd];
+
+                // Coincidencias con summary-bitacora
+                values.daily_hours_water_chiller[col.key] = summaryField(day, 'hourmeter_water_chiller');
+                values.cycles_water_chiller[col.key] = summaryField(day, 'cycles_water_chiller');
+                values.daily_hours_air_chiller[col.key] = summaryField(day, 'hourmeter_air_chiller');
+                values.cycles_air_chiller[col.key] = summaryField(day, 'cycles_air_chiller');
+                values.temp_central_chw_returned[col.key] = summaryField(day, 'temp_central_chilled_water_tank_top');
+                values.water_level_tank1[col.key] = summaryField(day, 'water_level_tank1');
+                values.temp_tank1[col.key] = summaryField(day, 'temp_tank1');
+                values.water_level_tank2[col.key] = summaryField(day, 'water_level_tank2');
+                values.temp_tank2[col.key] = summaryField(day, 'temp_tank2');
+                values.water_level_tank3[col.key] = summaryField(day, 'water_level_tank3');
+                values.temp_tank3[col.key] = summaryField(day, 'temp_tank3');
+
+                // Filas 2, 4 y 5 desde endpoints /avg
+                const agua = numOrNull(consumo?.total_compresor_agua);
+                const aire = numOrNull(consumo?.total_compresor_aire);
+                const bomba = numOrNull(consumo?.consumo_promedio_bomba);
+                values.kwh_water_chiller_compressor[col.key] = agua == null ? '' : agua;
+                values.kwh_air_chiller_compressor[col.key] = aire == null ? '' : aire;
+                values.kwh_circulating_pump[col.key] = bomba == null ? '' : bomba;
+            }
+
+            return values;
+        }
+
+        function buildPvSystemValues(columns, enercloByDate) {
+            const values = {};
+            for (const indicator of PV_SYSTEM_INDICATORS) {
+                values[indicator.key] = {};
+            }
+
+            const dayCols = columns.filter((c) => c.type === 'day');
+            for (const col of dayCols) {
+                const day = enercloByDate[col.ymd];
+                const epv = numOrNull(day?.epv);
+                const echarge = numOrNull(day?.echarge);
+                const edischarge = numOrNull(day?.edischarge);
+                const egrid = numOrNull(day?.egrid);
+                const eload = numOrNull(day?.eload); // Load = Consumed from PV
+
+                // Plant factor diario ≈ generación / (capacidad × 24 h) × 100
+                values.plant_factor_pv[col.key] =
+                    epv == null ? '' : `${((epv / (PV_CAPACITY_KW * 24)) * 100).toFixed(2)}%`;
+
+                values.kwh_generated_by_pv[col.key] = epv == null ? '' : epv;
+                values.inverter_losses[col.key] = 0;
+                values.kwh_battery_charge_from_pv[col.key] = echarge == null ? '' : echarge;
+                values.kwh_consumed_from_pv[col.key] = eload == null ? '' : eload;
+                values.kwh_consumed_from_battery[col.key] = edischarge == null ? '' : edischarge;
+                values.kwh_consumed_from_enee[col.key] = egrid == null ? '' : egrid;
+
+                // Total = Consumed from PV + Consumed from ENEE
+                values.total_kwh_consumed[col.key] =
+                    eload == null && egrid == null ? '' : (eload || 0) + (egrid || 0);
+            }
+
+            return values;
+        }
+
+        async function fetchIonDayBoundsClient(date) {
+            const response = await fetch(`/api/chiller/data/ion_meter_minutos?date=${date}`);
+            if (!response.ok) throw new Error(`ION ${date}`);
+            const payload = await response.json();
+            const rows = Array.isArray(payload?.data) ? payload.data : [];
+            if (!rows.length) return { date, ok: true, empty: true };
+            const sorted = [...rows].sort((a, b) => String(a.fecha_hora).localeCompare(String(b.fecha_hora)));
+            const first = sorted[0];
+            const last = sorted[sorted.length - 1];
+            return {
+                date,
+                ok: true,
+                empty: false,
+                kwh_imp_inicial: first?.kwh_imp ?? null,
+                kwh_imp_final: last?.kwh_imp ?? null,
+                kwh_exp_inicial: first?.kwh_exp ?? null,
+                kwh_exp_final: last?.kwh_exp ?? null
+            };
+        }
+
+        async function fetchSummaryDayClient(date) {
+            const response = await fetch(`/api/chiller/summary-bitacora?date=${date}`);
+            if (!response.ok) throw new Error(`Summary ${date}`);
+            const payload = await response.json();
+            if (!payload?.success || !payload?.data) return { date, ok: true, empty: true };
+            return { date, ok: true, empty: false, data: payload.data };
+        }
+
+        async function fetchConsumoDayClient(date) {
+            try {
+                const [aireRes, aguaRes, bombaRes] = await Promise.all([
+                    fetch(`/api/chiller/data/consumo/aire/segundos/avg?date=${date}`),
+                    fetch(`/api/chiller/data/consumo/agua/segundos/avg?date=${date}`),
+                    fetch(`/api/chiller/data/bomba/segundos/avg?table=bomba_proceso_segundos&date=${date}`)
+                ]);
+
+                const [aireJson, aguaJson, bombaJson] = await Promise.all([
+                    aireRes.ok ? aireRes.json() : Promise.resolve(null),
+                    aguaRes.ok ? aguaRes.json() : Promise.resolve(null),
+                    bombaRes.ok ? bombaRes.json() : Promise.resolve(null)
+                ]);
+
+                return {
+                    date,
+                    ok: true,
+                    empty: false,
+                    total_compresor_aire: aireJson?.total_compresor_aire ?? null,
+                    total_compresor_agua: aguaJson?.total_compresor_agua ?? null,
+                    consumo_promedio_bomba: bombaJson?.consumo_promedio ?? null
+                };
+            } catch (error) {
+                return { date, ok: false, empty: true };
+            }
+        }
+
+        async function fetchIonDaysClient(dates) {
+            const rows = await Promise.all(dates.map((d) => fetchIonDayBoundsClient(d).catch(() => ({ date: d, ok: false, empty: true }))));
+            const byDate = {};
+            for (const row of rows) byDate[row.date] = row;
+            return byDate;
+        }
+
+        async function fetchSummaryDaysClient(dates) {
+            const rows = await Promise.all(dates.map((d) => fetchSummaryDayClient(d).catch(() => ({ date: d, ok: false, empty: true }))));
+            const byDate = {};
+            for (const row of rows) byDate[row.date] = row;
+            return byDate;
+        }
+
+        async function fetchConsumoDaysClient(dates) {
+            const rows = await Promise.all(dates.map((d) => fetchConsumoDayClient(d)));
+            const byDate = {};
+            for (const row of rows) byDate[row.date] = row;
+            return byDate;
+        }
+
+        async function fetchEnercloStatsMonth(month) {
+            const response = await fetch(`/api/stats?month=${month}`);
+            if (!response.ok) throw new Error('Error al consultar EnerClo del mes');
+            const json = await response.json();
+            if (json.code !== 200) throw new Error(json.msg || 'No se pudo cargar EnerClo del mes');
+            return json;
+        }
+
+        async function fetchWeatherRange(start, end) {
+            const response = await fetch(`/api/weather/range?start=${start}&end=${end}`);
+            if (!response.ok) throw new Error('Error al consultar Weather Forecast');
+            const json = await response.json();
+            if (!json.success) throw new Error(json.error || 'No se pudo cargar Weather Forecast');
+            return json.days || {};
+        }
+
+        function indexEnercloByDate(rows) {
+            const byDate = {};
+            for (const row of (Array.isArray(rows) ? rows : [])) {
+                if (row?.statisticsDate) byDate[row.statisticsDate] = row;
+            }
+            return byDate;
+        }
+
+        function BitacoraNirvanaTab() {
+            const minDate = BITACORA_START;
+            const today = todayLocal();
+            // Centro máx. = ayer → la ventana por defecto es anteayer | ayer | hoy
+            const maxDate = shiftYmd(today, -1);
+            const tableWrapRef = useRef(null);
+            const [selectedDate, setSelectedDate] = useState(maxDate);
+            const [values, setValues] = useState({});
+            const [chillerValues, setChillerValues] = useState({});
+            const [pvValues, setPvValues] = useState({});
+            const [loading, setLoading] = useState(false);
+            const [capturing, setCapturing] = useState(false);
+            const [loadingParts, setLoadingParts] = useState({});
+            const [error, setError] = useState('');
+
+            const columns = useMemo(
+                () => buildBitacoraColumnsForCenter(selectedDate),
+                [selectedDate]
+            );
+
+            const canPrev = selectedDate > minDate;
+            const canNext = selectedDate < maxDate;
+
+            const handleCapture = async () => {
+                setCapturing(true);
+                setError('');
+                try {
+                    await captureBitacoraTable(
+                        tableWrapRef.current,
+                        `bitacora-nirvana-${selectedDate}.png`
+                    );
+                } catch (err) {
+                    setError(`Captura: ${err.message || err}`);
+                } finally {
+                    setCapturing(false);
+                }
+            };
+
+            const loadWindow = async (centerDate = selectedDate) => {
+                setLoading(true);
+                setError('');
+                setValues({});
+                setChillerValues({});
+                setPvValues({});
+                setLoadingParts({ ion: true, summary: true, consumo: true, enerclo: true, weather: true });
+
+                const cols = buildBitacoraColumnsForCenter(centerDate);
+                const shownDates = cols.map((c) => c.ymd);
+                const ionDates = [
+                    shiftYmd(centerDate, -2),
+                    shiftYmd(centerDate, -1),
+                    centerDate,
+                    shiftYmd(centerDate, 1),
+                    shiftYmd(centerDate, 2)
+                ];
+                const monthKey = centerDate.slice(0, 7);
+
+                let ionDays = {};
+                let summaryDays = {};
+                let consumoDays = {};
+                let enercloByDate = {};
+                let weatherByDate = {};
+                const errors = [];
+
+                const markDone = (part) => {
+                    setLoadingParts((prev) => ({ ...prev, [part]: false }));
+                };
+
+                const rebuildGeneral = () => {
+                    setValues(buildBitacoraValues(cols, ionDays, enercloByDate, weatherByDate));
+                };
+
+                const rebuildChiller = () => {
+                    setChillerValues(buildChillerSystemValues(cols, summaryDays, consumoDays));
+                };
+
+                const rebuildPv = () => {
+                    setPvValues(buildPvSystemValues(cols, enercloByDate));
+                };
+
+                const tasks = [
+                    fetchIonDaysClient(ionDates)
+                        .then((days) => {
+                            ionDays = days;
+                            rebuildGeneral();
+                        })
+                        .catch((err) => { errors.push(`ION: ${err.message}`); })
+                        .finally(() => markDone('ion')),
+
+                    fetchSummaryDaysClient(shownDates)
+                        .then((days) => {
+                            summaryDays = days;
+                            rebuildChiller();
+                        })
+                        .catch((err) => { errors.push(`Summary: ${err.message}`); })
+                        .finally(() => markDone('summary')),
+
+                    fetchConsumoDaysClient(shownDates)
+                        .then((days) => {
+                            consumoDays = days;
+                            rebuildChiller();
+                        })
+                        .catch((err) => { errors.push(`Consumo: ${err.message}`); })
+                        .finally(() => markDone('consumo')),
+
+                    fetchEnercloStatsMonth(monthKey)
+                        .then((json) => {
+                            enercloByDate = indexEnercloByDate(json.data);
+                            rebuildPv();
+                            rebuildGeneral();
+                        })
+                        .catch((err) => { errors.push(`EnerClo: ${err.message}`); })
+                        .finally(() => markDone('enerclo')),
+
+                    fetchWeatherRange(shownDates[0], shownDates[2])
+                        .then((days) => {
+                            weatherByDate = days;
+                            rebuildGeneral();
+                        })
+                        .catch((err) => { errors.push(`Weather: ${err.message}`); })
+                        .finally(() => markDone('weather'))
+                ];
+
+                await Promise.allSettled(tasks);
+                if (errors.length) setError(errors.join(' · '));
+                setLoading(false);
+            };
+
+            useEffect(() => {
+                loadWindow(selectedDate);
+            }, [selectedDate]);
+
+            const mergedValues = useMemo(
+                () => ({ ...values, ...chillerValues, ...pvValues }),
+                [values, chillerValues, pvValues]
+            );
+
+            const cellValue = (indicatorKey, columnKey) => {
+                const row = mergedValues[indicatorKey];
+                if (!row || row[columnKey] == null || row[columnKey] === '') return '';
+                return formatBitacoraNumber(row[columnKey]);
+            };
+
+            return (
+                <div>
+                    <div className="header" style={{ borderBottom: 'none', marginBottom: '1rem', paddingBottom: 0 }}>
+                        <div>
+                            <p className="device-sn">
+                                Bitácora Nirvana · día−1 / centro / día+1 (por defecto hoy al final)
+                                {loading ? ` · Cargando: ${[
+                                    loadingParts.ion && 'ION',
+                                    loadingParts.summary && 'Summary',
+                                    loadingParts.consumo && 'Consumo',
+                                    loadingParts.enerclo && 'EnerClo',
+                                    loadingParts.weather && 'Weather'
+                                ].filter(Boolean).join(', ') || '...'}` : ''}
+                            </p>
+                        </div>
+                        <div className="header-actions">
+                            <button
+                                className="refresh-btn"
+                                disabled={!canPrev || loading}
+                                onClick={() => setSelectedDate(shiftYmd(selectedDate, -1))}
+                            >
+                                ← Día anterior
+                            </button>
+                            <input
+                                className="date-input"
+                                type="date"
+                                min={minDate}
+                                max={maxDate}
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                disabled={loading}
+                            />
+                            <button
+                                className="refresh-btn"
+                                disabled={!canNext || loading}
+                                onClick={() => setSelectedDate(shiftYmd(selectedDate, 1))}
+                            >
+                                Día siguiente →
+                            </button>
+                            <button
+                                className="refresh-btn"
+                                disabled={loading}
+                                onClick={() => loadWindow(selectedDate)}
+                            >
+                                {loading ? 'Cargando...' : 'Actualizar'}
+                            </button>
+                            <button
+                                className="refresh-btn"
+                                disabled={loading || capturing}
+                                onClick={handleCapture}
+                            >
+                                {capturing ? 'Capturando...' : 'Captura tabla'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {error && (
+                        <p className="bitacora-note" style={{ color: 'var(--danger)' }}>{error}</p>
+                    )}
+
+                    <BitacoraUnifiedTable
+                        tableRef={tableWrapRef}
+                        columns={columns}
+                        generalIndicators={BITACORA_INDICATORS}
+                        chillerIndicators={CHILLER_SYSTEM_INDICATORS}
+                        pvIndicators={PV_SYSTEM_INDICATORS}
+                        cellValue={cellValue}
+                    />
+                    <p className="bitacora-note">
+                        Ventana 3 días (hoy al final) · Captura: etiqueta + 2 primeros días · Open-Meteo Tegucigalpa
+                    </p>
+                </div>
+            );
+        }
+
+        function App() {
+            // Pestañas EnerClo / Chiller ocultas; componentes conservados (EnercloTab, ChillerTab).
+            const SHOW_LEGACY_TABS = false;
+            const [tab, setTab] = useState('bitacora');
+
+            return (
+                <div className="app-container">
+                    <header className="header">
+                        <div>
+                            <h1>Bitácora Nirvana</h1>
+                            <p className="device-sn">Energy Production and Consumption Log · Nirvana Building</p>
+                        </div>
+                    </header>
+
+                    {SHOW_LEGACY_TABS && (
+                        <nav className="tabs">
+                            <button
+                                className={`tab-btn${tab === 'bitacora' ? ' active' : ''}`}
+                                onClick={() => setTab('bitacora')}
+                            >
+                                Bitácora Nirvana
+                            </button>
+                            <button
+                                className={`tab-btn${tab === 'enerclo' ? ' active' : ''}`}
+                                onClick={() => setTab('enerclo')}
+                            >
+                                EnerClo
+                            </button>
+                            <button
+                                className={`tab-btn${tab === 'chiller' ? ' active' : ''}`}
+                                onClick={() => setTab('chiller')}
+                            >
+                                Chiller / ION
+                            </button>
+                        </nav>
+                    )}
+
+                    <main className="dashboard">
+                        {SHOW_LEGACY_TABS && tab === 'enerclo' && <EnercloTab />}
+                        {SHOW_LEGACY_TABS && tab === 'chiller' && <ChillerTab />}
+                        <BitacoraNirvanaTab />
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
